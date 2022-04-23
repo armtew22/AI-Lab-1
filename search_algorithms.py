@@ -2,8 +2,13 @@
 # Name(s): 
 
 from __future__ import annotations
+from os import stat
 from pickle import TRUE
+from queue import LifoQueue
+import queue
+from sre_parse import State
 from sysconfig import get_path
+from tarfile import FIFOTYPE
 from typing import Deque, List, Collection, Tuple, Callable, Optional, Union, Set, Dict, Type, Iterable
 import random
 from collections import deque
@@ -69,7 +74,6 @@ class RandomSearch(GoalSearchAgent):
         super().__init__(*args, **kwargs) # pass any unused parameters to any superclasses
         self.frontier = []
 
-
         
     def enqueue(self, state: StateNode, cutoff: Union[int, float] = INF):
         """ Add the state to the frontier, unless depth exceeds the cutoff """
@@ -124,11 +128,6 @@ class TreeSearchAlgorithm(GoalSearchAgent):
         
             if gui_callback_fn(dequeued) == TRUE: 
                 return None
-            
-            # for action in dequeued.get_all_actions():
-            #     for parent in dequeued.get_path(): 
-            #         if parent != dequeued.get_next_state(action):
-            #             self.enqueue(dequeued.get_next_state(action)) 
 
             for action in dequeued.get_all_actions():
                 if dequeued.get_next_state(action) not in dequeued.get_path(): 
@@ -146,25 +145,26 @@ class DepthFirstSearch(GoalSearchAgent):
 
     DFS is implemented with a LIFO queue. A list is an efficient one. 
     """
+    frontier : List[StateNode]
     
     def __init__(self, *args, **kwargs):
         """ Initialize self.total_extends and self.total_enqueues (done in super().__init__())
         Create an empty frontier queue.
         """
         super().__init__(*args, **kwargs)
-        # TODO initiate frontier data structure
+        self.frontier = []
+        self.total_enqueues = 0; 
+        self.total_extends = 0; 
         
     def enqueue(self, state: StateNode, cutoff: Union[int, float] = INF):
         """ Add the state to the frontier, unless depth exceeds the cutoff """
-        # TODO 
-        raise NotImplementedError
+        if state.depth < cutoff:
+            self.frontier.append(state)
 
 
-        
     def dequeue(self) -> StateNode:
         """  Choose, remove, and return the MOST RECENTLY ADDED state from the frontier."""
-        # TODO 
-        raise NotImplementedError
+        return self.frontier.pop() 
 
 class BreadthFirstSearch(GoalSearchAgent):
     """ Partial class representing the Breadth First Search strategy.
@@ -175,24 +175,26 @@ class BreadthFirstSearch(GoalSearchAgent):
     Lists are bad FIFO queues, but the deque data structure is an efficient implementation. 
     Check out the documentation of deque: https://docs.python.org/3/library/collections.html#collections.deque
     """
-    
+    frontier : deque[StateNode]
     def __init__(self, *args, **kwargs):
         """ Initialize self.total_extends and self.total_enqueues (done in super().__init__())
         Create an empty frontier queue.
         """
         super().__init__(*args, **kwargs)
-        # TODO initiate frontier data structure
+        self.frontier = deque()
+        self.total_enqueues = 0
+        self.total_extends = 0
         
     def enqueue(self, state: StateNode, cutoff: Union[int, float] = INF):
         """ Add the state to the frontier, unless depth exceeds the cutoff """
-        # TODO 
-        raise NotImplementedError
+        if state.depth < cutoff:
+            self.frontier.append(state)
+        
 
         
     def dequeue(self) -> StateNode:
         """  Choose, remove, and return the LEAST RECENTLY ADDED state from the frontier."""
-        # TODO 
-        raise NotImplementedError
+        return self.frontier.popleft() 
 
 
 
@@ -216,20 +218,23 @@ class UniformCostSearch(GoalSearchAgent):
         Create an empty frontier queue.
         """
         super().__init__(*args, **kwargs)
-        # TODO initiate frontier data structure
-
+        self.frontier = [] 
+        self.total_enqueues = 0
+        self.total_extends = 0
+        
 
         
     def enqueue(self, state: StateNode, cutoff: Union[int, float] = INF):
         """ Add the state to the frontier, unless path COST exceeds the cutoff """
-        # TODO 
-        raise NotImplementedError
+        if state.depth < cutoff:
+            heapq.heappush(self.frontier, [state.path_cost, state])
+        
 
         
     def dequeue(self) -> StateNode:
         """  Choose, remove, and return the state with LOWEST PATH COST from the frontier."""
-        # TODO 
-        raise NotImplementedError
+        return heapq.heappop(self.frontier)
+        
 
 
 class GraphSearchAlgorithm(GoalSearchAgent):
