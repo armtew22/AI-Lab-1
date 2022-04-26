@@ -1,5 +1,5 @@
 # Lab 1 (Part 1a and 2a)
-# Name(s): 
+# Name(s): Armaan Tewary and Safa Karagoz
 
 from __future__ import annotations
 from os import stat
@@ -121,7 +121,6 @@ class TreeSearchAlgorithm(GoalSearchAgent):
         self.enqueue(initial_state)
         while len(self.frontier) > 0:
             dequeued = self.dequeue()
-            self.total_extends += 1
 
             if dequeued.is_goal_state(): 
                 return dequeued
@@ -135,6 +134,8 @@ class TreeSearchAlgorithm(GoalSearchAgent):
                     gui_callback_fn(dequeued.get_next_state(action))
                     self.total_enqueues += 1
 
+            self.total_extends += 1
+    
         return None
 
 
@@ -227,13 +228,14 @@ class UniformCostSearch(GoalSearchAgent):
     def enqueue(self, state: StateNode, cutoff: Union[int, float] = INF):
         """ Add the state to the frontier, unless path COST exceeds the cutoff """
         if state.depth < cutoff:
-            heapq.heappush(self.frontier, [state.path_cost, state])
+            heapq.heappush(self.frontier, (state.path_cost, state))
         
 
         
     def dequeue(self) -> StateNode:
         """  Choose, remove, and return the state with LOWEST PATH COST from the frontier."""
-        return heapq.heappop(self.frontier)
+        pop = heapq.heappop(self.frontier)
+        return pop[1]
         
 
 
@@ -264,7 +266,27 @@ class GraphSearchAlgorithm(GoalSearchAgent):
         """
         ext_filter : Set[StateNode] = set() # Create an empty extended state filter
 
-        #TODO implement! (You may start by copying your TreeSearch's code)
+        self.enqueue(initial_state)
+        while len(self.frontier) > 0:
+            dequeued = self.dequeue()
+
+            if dequeued not in ext_filter:
+                if dequeued.is_goal_state(): 
+                    return dequeued
+        
+            if gui_callback_fn(dequeued) == TRUE: 
+                return None
+
+            for action in dequeued.get_all_actions():
+                new_state = dequeued.get_next_state(action)
+                if new_state not in dequeued.get_path() and new_state not in ext_filter: 
+                    self.enqueue(new_state, cutoff)
+                    gui_callback_fn(new_state)
+                    ext_filter.add(dequeued)
+                    self.total_enqueues += 1
+
+            self.total_extends += 1
+    
         return None
 
 
